@@ -582,7 +582,7 @@ def load_transformer():
 
 
 # transformer = build_transformer()
-# transformer = load_transformer()
+transformer = load_transformer()
 
 
 
