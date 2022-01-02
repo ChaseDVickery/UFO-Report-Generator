@@ -564,17 +564,25 @@ def load_transformer():
     
     return transformer
 
-def save_transformer():
-    t = build_transformer()
-    checkpoint_path = "./models/ufo_rep_transformer"
-    ckpt = tf.train.Checkpoint(transformer=t)
-    ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=50)
-    ckpt_manager.save()
-    print("Transformer Model saved!")
+# def save_transformer():
+#     transformer = build_transformer()
+
+#     print("Running test prediction")
+#     output_array = tf.TensorArray(dtype=tf.int32, size=0, dynamic_size=True)
+#     output_array = output_array.write(0, tf.constant([start_token]))
+#     encoder_input = tf.constant([start_token, end_token])[tf.newaxis]
+#     output = tf.transpose(output_array.stack())
+#     predictions, _ = transformer([encoder_input, output], is_training=False)
+
+#     checkpoint_path = "./models/ufo_rep_transformer"
+#     ckpt = tf.train.Checkpoint(transformer=transformer)
+#     ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=1)
+#     ckpt_manager.save()
+#     print("Transformer Model saved!")
 
 
 # transformer = build_transformer()
-transformer = load_transformer()
+# transformer = load_transformer()
 
 
 
