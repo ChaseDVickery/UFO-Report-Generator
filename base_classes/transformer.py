@@ -529,7 +529,6 @@ def build_transformer():
         rate=dropout_rate)
 
     checkpoint_path = "./training_checkpoints_Transformer/full"
-    # checkpoint_path = "./checkpoints/len_16700/train"
 
     ckpt = tf.train.Checkpoint(transformer=transformer)
 
@@ -541,21 +540,64 @@ def build_transformer():
     
     return transformer
 
+def load_transformer():
+    transformer = Transformer(
+        num_layers=num_layers,
+        d_model=d_model,
+        num_heads=num_heads,
+        dff=dff,
+        input_vocab_size=7816,
+        target_vocab_size=7816,
+        pe_input=10000,
+        pe_target=6000,
+        rate=dropout_rate)
+
+    checkpoint_path = "./models/ufo_rep_transformer"
+
+    ckpt = tf.train.Checkpoint(transformer=transformer)
+
+    ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=50)
+
+    if ckpt_manager.latest_checkpoint:
+        ckpt.restore(ckpt_manager.latest_checkpoint)
+        print('Transformer Model restored!')
+    
+    return transformer
+
+def save_transformer():
+    t = build_transformer()
+    checkpoint_path = "./models/ufo_rep_transformer"
+    ckpt = tf.train.Checkpoint(transformer=t)
+    ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=50)
+    ckpt_manager.save()
+    print("Transformer Model saved!")
+
+
+# transformer = build_transformer()
+transformer = load_transformer()
 
 
 
-transformer = build_transformer()
-checkpoint_path = "./training_checkpoints_Transformer/full"
 
-ckpt = tf.train.Checkpoint(transformer=transformer,
-                           optimizer=optimizer)
 
-ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=50)
 
-# if a checkpoint exists, restore the latest checkpoint.
-if ckpt_manager.latest_checkpoint:
-    ckpt.restore(ckpt_manager.latest_checkpoint)
-    print('Latest checkpoint restored!!')
+
+
+
+
+
+
+# checkpoint_path = "./training_checkpoints_Transformer/full"
+
+# ckpt = tf.train.Checkpoint(transformer=transformer,
+#                            optimizer=optimizer)
+
+# ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=50)
+
+# # if a checkpoint exists, restore the latest checkpoint.
+# if ckpt_manager.latest_checkpoint:
+#     ckpt.restore(ckpt_manager.latest_checkpoint)
+#     print('Latest checkpoint restored!!')
 
 
 

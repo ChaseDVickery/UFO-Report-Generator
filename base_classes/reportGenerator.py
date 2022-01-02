@@ -9,9 +9,10 @@ import random
 logging.getLogger('tensorflow').setLevel(logging.ERROR)  # suppress warnings
 
 from base_classes.transformer import start_token, end_token, tokenize, pure_tokenize, detokenize
+from base_classes.transformer import transformer as default_transformer
 
 class ReportGenerator():
-    def __init__(self, transformer):
+    def __init__(self, transformer=default_transformer):
         # if not isinstance(transformer, Transformer):
         #     raise TypeError("transformer must be a Transformer object")
         self.transformer = transformer
@@ -149,38 +150,65 @@ class ReportGenerator():
         return report
 
 
-    def generate_report(self, max_report_len=1000, creativity=0.01):
+    def generate_report(self, max_report_len=1000, creativity=0):
         """
         Generates a random UFO sighting report
         """
         self.start_word_prediction()  # initialize prediction loop
+        if creativity > 1:
+            creativity = 1
+        elif creativity < 0:
+            creativity = 0
         next_word_tok = -1
         count = 0
         min_count = max_report_len/2
-        k = 50
+        min_k = 10
+        max_k = 50
+        k = int(min_k + creativity*(max_k - min_k))
+        min_smooth = 0
+        max_smooth = 0.1
+        smooth = min_smooth + creativity*(max_smooth - min_smooth)
+
+        min_variety_chance = 0
+        max_variety_chance = 0.2
+        variety_chance = min_variety_chance + creativity*(max_variety_chance - min_variety_chance)
+        variety_k = k + 20
+        variety_smooth = 1
+        # print("Creativity: ", creativity)
+        # print("K: ", k)
+        # print("Smoothing: ", smooth)
+        # print("Variety Chance: ", variety_chance)
+        # print("Variety K: ", variety_k)
+        # print("Variety Smoothing: ", variety_smooth)
+        # Creativity factor:
+        # Lowest creativity (0):
+        #   Smallest word selection (k = 10)
+        #   Regular probability normalization (no smoothing)
+        # Highest creativity (1):
+        #   Largest word selection (k=50)
+        #   Highest normalization smoothing (smooth = 1)
         while next_word_tok != end_token and count < max_report_len:
+            report_completion = (self.output_array.size() / max_report_len).numpy()
             # Get word probabilities
             word_probs = self.get_next_word_probabilities()
-            # Add more variety every few tokens (even if it's weird)
-            # variety_spread = 10
-            # if count % variety_spread == 0:
-            #     print("Generating word ", count)
-            #     big_k = 100
-            #     top_probs = tf.math.top_k(word_probs, big_k)
-            #     next_word_tok = np.random.choice(top_probs.indices.numpy().flatten(), 1)
-            #     next_word_tok = tf.constant(next_word_tok)[tf.newaxis]
-            #     self.feedback_next_word_tok(next_word_tok)
-            #     count += 1
-            #     continue
-
             top_probs = tf.math.top_k(word_probs, k)
-            
-            report_completion = (self.output_array.size() / max_report_len).numpy()
             highest_end_token_index = int(k * report_completion)
             does_have_end_token = tf.reduce_any(tf.math.equal(top_probs.indices[0:highest_end_token_index], tf.constant(end_token)))
-            normalized_top_probs = tf.linalg.normalize(top_probs.values, ord=1)[0].numpy().flatten()
+
+            variety_roll = np.random.rand(1)
+            # print("Variety roll: ", variety_roll)
+            if variety_roll <= variety_chance:
+                # print("VARIETY WORD")
+                top_probs = tf.math.top_k(word_probs, variety_k)
+                smoothed_top_probs = tf.math.add(top_probs.values, variety_smooth)
+                normalized_top_probs = tf.linalg.normalize(smoothed_top_probs, ord=1)[0].numpy().flatten()
+            else:
+                smoothed_top_probs = tf.math.add(top_probs.values, smooth)
+                normalized_top_probs = tf.linalg.normalize(smoothed_top_probs, ord=1)[0].numpy().flatten()
+            # print("Top Probs: ", top_probs.values)
+            # print("Smoothed top probs: ", smoothed_top_probs)
+            # print("Normalized top probs: ", normalized_top_probs)
             # Check if ending token is in top possible words
-            # if count > min_count and tf.cond(tf.equal(tf.constant(True), does_have_end_token), lambda: True, lambda: False):
             if tf.cond(tf.equal(tf.constant(True), does_have_end_token), lambda: True, lambda: False):
                 # print("Found End token in top ", highest_end_token_index, " results")
                 next_word_tok = tf.constant([end_token])[tf.newaxis]
@@ -189,15 +217,6 @@ class ReportGenerator():
                 # This should make the sentences more coherent
                 next_word_tok = np.random.choice(top_probs.indices.numpy().flatten(), 1, p=normalized_top_probs)
                 next_word_tok = tf.constant(next_word_tok)[tf.newaxis]
-                # # Use the following instead to remove end tokens from possible selection
-                # indices = top_probs.indices.numpy()
-                # values = top_probs.values.numpy()
-                # valid_mask = indices != end_token
-                # indices = indices[valid_mask]
-                # values = values[valid_mask]
-                # normalized_top_probs = tf.linalg.normalize(tf.constant(values), ord=1)[0].numpy().flatten()
-                # next_word_tok = np.random.choice(indices.flatten(), 1, p=normalized_top_probs)
-                # next_word_tok = tf.constant(next_word_tok)[tf.newaxis]
 
             if count < min_count and next_word_tok == end_token:
                 end_tok_idx = tf.where(tf.math.not_equal(top_probs.indices, tf.constant(end_token)))
