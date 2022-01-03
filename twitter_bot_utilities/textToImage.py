@@ -3,7 +3,15 @@ import math
 import os
 from PIL import Image, ImageFont, ImageDraw
 
-def textToImage(toImage: str):
+
+def image_to_media(img: Image):
+    media_name = "tempmedia.png"
+    img.save(media_name)
+    media_ids = [[0, media_name]]
+    return media_ids
+
+
+def text_to_image(toImage: str):
     # font_path = os.path.join('twitter_bot_utilities', 'Share_Tech_Mono', 'ShareTechMono-Regular.ttf')
     # font_ratio = 1.66
     font_path = os.path.join('twitter_bot_utilities', 'VT323', 'VT323-Regular.ttf')

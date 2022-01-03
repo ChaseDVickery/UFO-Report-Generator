@@ -108,6 +108,11 @@ class ReportGenerator():
         to_cap = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
         hyphenated_compounds = ["like", "shaped", "shape", "moving", "ish"]
 
+        # Replace Curly quotes with normal quotes
+        report = report.replace("‘", "'")
+        report = report.replace("’", "'")
+        report = report.replace("“", "\"")
+        report = report.replace("”", "\"")
         # Delete spaces around certain punctuation
         for punct in delete_space_before:
             report = report.replace(" "+punct, punct)
