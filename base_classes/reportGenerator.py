@@ -1,5 +1,7 @@
 
 import logging
+import os
+from pathlib import Path
 
 import tensorflow as tf
 import numpy as np
@@ -233,3 +235,31 @@ class ReportGenerator():
         return self.token_tensor_to_report(self.output)
         # print(self.token_tensor_to_report(self.output))
 
+
+
+def generate_report_library(generator: ReportGenerator, num_reports=10, max_report_len=100, creativity=0):
+    reports = []
+    for numrep in range(num_reports):
+        if (numrep%5 == 0):
+            print("Generated ", numrep, " reports")
+        reports.append(generator.generate_report(max_report_len, creativity))
+    return reports
+
+def write_reports_to_file(report_list, filepath):
+    with open(filepath, "w", encoding="utf-8") as rf:
+        for report in report_list:
+            rf.write(report)
+            rf.write("\n\n")
+
+def create_report_book(generator: ReportGenerator, filepath, num_reports=100, max_report_len=200, creativity=0):
+    # Create parent folder if it does not exist
+    parent_folder = Path(filepath).parent.absolute()
+    try:
+        os.mkdir(parent_folder)
+    except FileExistsError:
+        pass
+    
+    reports = generate_report_library(generator, num_reports, max_report_len, creativity)
+    print("Done Generating ", num_reports, " reports")
+    write_reports_to_file(reports, filepath)
+    print("Done Writing reports to file.")
